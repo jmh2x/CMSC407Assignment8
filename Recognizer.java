@@ -14,7 +14,7 @@ public class Recognizer {
             return;
         }
 
-        // Use try-with-resources to handle file I/O safely
+        
         try (BufferedReader reader = new BufferedReader(new FileReader(args[0]));
              BufferedWriter writer = new BufferedWriter(new FileWriter(args[1]))) {
 
@@ -43,23 +43,23 @@ public class Recognizer {
             }
 
         } catch (IOException e) {
-            // Handle file I/O errors
+            // Handle  errors
             System.err.println("Error processing files: " + e.getMessage());
         }
     }
 
-    // Write an error message and throw an exception to halt parsing
+    // error message
     static void error(String msg) throws IOException {
         writer.write(msg + "\n");
         throw new IOException(msg);
     }
 
-    // Peek at the current token without consuming it
+    // Peekcurrent token
     static Common.Lex peek() {
         return index < tokens.size() ? tokens.get(index) : null;
     }
 
-    // Match the current token with the expected token and consume it
+    //Match current token with expected token and consume it
     static Common.Lex match(Common.Token expected) throws IOException {
         Common.Lex tok = peek();
         if (tok == null || tok.token != expected) {
@@ -69,13 +69,13 @@ public class Recognizer {
         return tok;
     }
 
-    // Parse the top-level grammar rule: function
+    // Parse function
     static void function() throws IOException {
         header();
         body();
     }
 
-    // Parse the header of a function
+    // Parse header of a function
     static void header() throws IOException {
         match(Common.Token.VARTYPE);
         match(Common.Token.IDENTIFIER);
@@ -84,7 +84,7 @@ public class Recognizer {
         match(Common.Token.RIGHT_PARENTHESIS);
     }
 
-    // Parse argument declarations in a function header
+    // Parse argument declarations in function header
     static void arg_decl() throws IOException {
         match(Common.Token.VARTYPE);
         match(Common.Token.IDENTIFIER);
@@ -95,14 +95,14 @@ public class Recognizer {
         }
     }
 
-    // Parse the body of a function
+    // Parse the body 
     static void body() throws IOException {
         match(Common.Token.LEFT_BRACKET);
         if (peek() != null && peek().token != Common.Token.RIGHT_BRACKET) statement_list();
         match(Common.Token.RIGHT_BRACKET);
     }
 
-    // Parse a list of statements
+    // Parse list of statements
     static void statement_list() throws IOException {
         statement();
         while (peek() != null && (peek().token == Common.Token.IDENTIFIER || peek().token == Common.Token.RETURN_KEYWORD || peek().token == Common.Token.WHILE_KEYWORD)) {
@@ -110,7 +110,7 @@ public class Recognizer {
         }
     }
 
-    // Parse a single statement
+    // Parsesingle statement
     static void statement() throws IOException {
         if (peek().token == Common.Token.WHILE_KEYWORD) while_loop();
         else if (peek().token == Common.Token.RETURN_KEYWORD) ret();
@@ -118,7 +118,7 @@ public class Recognizer {
         else error("Error: In grammar rule statement, expected a valid statement non-terminal");
     }
 
-    // Parse a while-loop statement
+    // Parse while-loop statement
     static void while_loop() throws IOException {
         match(Common.Token.WHILE_KEYWORD);
         match(Common.Token.LEFT_PARENTHESIS);
@@ -127,14 +127,14 @@ public class Recognizer {
         body();
     }
 
-    // Parse a return statement
+    // Parse return statement
     static void ret() throws IOException {
         match(Common.Token.RETURN_KEYWORD);
         expression();
         match(Common.Token.EOL);
     }
 
-    // Parse an assignment statement
+    // Parse assignment statement
     static void assignment() throws IOException {
         match(Common.Token.IDENTIFIER);
         match(Common.Token.EQUAL);
@@ -142,7 +142,7 @@ public class Recognizer {
         match(Common.Token.EOL);
     }
 
-    // Parse an expression
+    // Parse expression
     static void expression() throws IOException {
         if (peek().token == Common.Token.LEFT_PARENTHESIS) {
             match(Common.Token.LEFT_PARENTHESIS);
@@ -157,7 +157,7 @@ public class Recognizer {
         }
     }
 
-    // Parse a term (identifier or number)
+    // Parse  term (identifier or number)
     static void term() throws IOException {
         if (peek().token == Common.Token.IDENTIFIER || peek().token == Common.Token.NUMBER) {
             match(peek().token);

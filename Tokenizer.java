@@ -5,7 +5,7 @@ import java.util.*;
 public class Tokenizer {
 
     public static void main(String[] args) {
-        // Ensure the program is run with two arguments: input and output file paths
+        //program is run with two arguments: input and output file paths
         if (args.length < 2) {
             System.err.println("Usage: java Tokenizer <inputFile> <outputFile>");
             return;
@@ -14,34 +14,30 @@ public class Tokenizer {
         String inputFile = args[0];
         String outputFile = args[1];
 
-        // Use try-with-resources to handle file I/O safely
+        
         try (BufferedReader reader = new BufferedReader(new FileReader(inputFile));
              BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile))) {
 
             String line;
             List<Common.Lex> tokens = new ArrayList<>();
             
-            // Read the input file line by line and tokenize each line
+            // Read input file line by line and tokenize each line
             while ((line = reader.readLine()) != null) {
                 tokens.addAll(tokenizeLine(line));
             }
 
-            // Write the tokens and their lexemes to the output file
+            // Write the tokens and their lexemes 
             for (Common.Lex l : tokens) {
                 writer.write(l.token + " " + l.lexeme + "\n");
             }
 
         } catch (IOException e) {
-            // Handle file I/O errors
+            //error handling
             System.err.println("Error processing files: " + e.getMessage());
         }
     }
 
-    /**
-     * Tokenizes a single line of input into a list of tokens.
-     * @param line The input line to tokenize.
-     * @return A list of Lex objects representing the tokens and their lexemes.
-     */
+    /
     private static List<Common.Lex> tokenizeLine(String line) {
         List<Common.Lex> result = new ArrayList<>();
         int i = 0;

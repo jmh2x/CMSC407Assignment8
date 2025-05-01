@@ -29,7 +29,7 @@ public class Common {
         return s.matches("[a-zA-Z][a-zA-Z0-9]*");
     }
 
-    // Check if a string is a valid variable type (e.g., int, void)
+    // Check if a string is a valid variable type 
     public static boolean isVartype(String s) {
         return s.equals("int") || s.equals("void");
     }
