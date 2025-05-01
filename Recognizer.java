@@ -26,12 +26,12 @@ public class Recognizer {
             try {
                 function();
                 if (index != tokens.size()) {
-                    writer.write("Error: Only consumed " + index + " of the " + tokens.size() + " given tokens\n");
+                    error("body", "Only consumed " + index + " of the " + tokens.size() + " given tokens");
                 } else {
                     writer.write("PARSED!!!\n");
                 }
-            } catch (Exception e) {
-                writer.write("Error: " + e.getMessage() + "\n");
+            } catch (IOException e) {
+                writer.write(e.getMessage() + "\n");
             }
 
         } catch (IOException e) {
@@ -39,9 +39,18 @@ public class Recognizer {
         }
     }
 
-    static void error(String msg) throws IOException {
-        writer.write(msg + "\n");
-        throw new IOException(msg);
+    static void error(String rule, String expected, String actual) throws IOException {
+        String message = "Error: In grammar rule " + rule + ", expected " + expected + " but was " + actual;
+        writer.write(message + "\n");
+        writer.close();
+        System.exit(0);
+    }
+
+    static void error(String rule, String expectedNonTerminal) throws IOException {
+        String message = "Error: In grammar rule " + rule + ", expected a valid " + expectedNonTerminal + " non-terminal to be present but was not.";
+        writer.write(message + "\n");
+        writer.close();
+        System.exit(0);
     }
 
     static Common.Lex peek() {
@@ -51,7 +60,7 @@ public class Recognizer {
     static Common.Lex match(Common.Token expected, String ruleName) throws IOException {
         Common.Lex tok = peek();
         if (tok == null || tok.token != expected) {
-            error("Error: In grammar rule " + ruleName + ", expected token #" + index + " to be " + expected + " but was " + (tok != null ? tok.token : "null"));
+            error(ruleName, "token #" + index + " to be " + expected, tok != null ? tok.token.toString() : "null");
         }
         index++;
         return tok;
@@ -59,7 +68,7 @@ public class Recognizer {
 
     static void function() throws IOException {
         if (peek() == null || peek().token != Common.Token.VARTYPE) {
-            error("Error: In grammar rule function, expected a valid header non-terminal to be present but was not");
+            error("function", "header");
         }
         header();
         body();
@@ -74,27 +83,26 @@ public class Recognizer {
     }
 
     static void arg_decl() throws IOException {
-        match(Common.Token.VARTYPE, "header");
-        match(Common.Token.IDENTIFIER, "header");
+        match(Common.Token.VARTYPE, "arg-decl");
+        match(Common.Token.IDENTIFIER, "arg-decl");
         while (peek() != null && peek().token == Common.Token.COMMA) {
-            match(Common.Token.COMMA, "header");
-            match(Common.Token.VARTYPE, "header");
-            match(Common.Token.IDENTIFIER, "header");
+            match(Common.Token.COMMA, "arg-decl");
+            match(Common.Token.VARTYPE, "arg-decl");
+            match(Common.Token.IDENTIFIER, "arg-decl");
         }
     }
 
     static void body() throws IOException {
         match(Common.Token.LEFT_BRACKET, "body");
-        if (peek() != null && peek().token != Common.Token.RIGHT_BRACKET) statement_list();
+        if (peek() != null && peek().token != Common.Token.RIGHT_BRACKET) {
+            statement_list();
+        }
         match(Common.Token.RIGHT_BRACKET, "body");
     }
 
     static void statement_list() throws IOException {
         statement();
-        while (peek() != null && (
-                peek().token == Common.Token.IDENTIFIER ||
-                peek().token == Common.Token.RETURN_KEYWORD ||
-                peek().token == Common.Token.WHILE_KEYWORD)) {
+        while (peek() != null && (peek().token == Common.Token.IDENTIFIER || peek().token == Common.Token.RETURN_KEYWORD || peek().token == Common.Token.WHILE_KEYWORD)) {
             statement();
         }
     }
@@ -107,18 +115,15 @@ public class Recognizer {
         } else if (peek().token == Common.Token.IDENTIFIER) {
             assignment();
         } else {
-            error("Error: In grammar rule statement, expected a valid statement non-terminal");
+            error("statement", "a valid statement non-terminal");
         }
     }
 
     static void while_loop() throws IOException {
         match(Common.Token.WHILE_KEYWORD, "while-loop");
         match(Common.Token.LEFT_PARENTHESIS, "while-loop");
-        if (peek() == null || (
-            peek().token != Common.Token.IDENTIFIER &&
-            peek().token != Common.Token.NUMBER &&
-            peek().token != Common.Token.LEFT_PARENTHESIS)) {
-            error("Error: In grammar rule while-loop, expected a valid expression non-terminal to be present but was not");
+        if (peek() == null || (peek().token != Common.Token.IDENTIFIER && peek().token != Common.Token.NUMBER)) {
+            error("while-loop", "expression");
         }
         expression("while-loop");
         match(Common.Token.RIGHT_PARENTHESIS, "while-loop");
@@ -127,11 +132,8 @@ public class Recognizer {
 
     static void ret() throws IOException {
         match(Common.Token.RETURN_KEYWORD, "return");
-        if (peek() == null || (
-            peek().token != Common.Token.IDENTIFIER &&
-            peek().token != Common.Token.NUMBER &&
-            peek().token != Common.Token.LEFT_PARENTHESIS)) {
-            error("Error: In grammar rule return, expected a valid expression non-terminal to be present but was not");
+        if (peek() == null || (peek().token != Common.Token.IDENTIFIER && peek().token != Common.Token.NUMBER)) {
+            error("return", "expression");
         }
         expression("return");
         match(Common.Token.EOL, "return");
@@ -140,6 +142,9 @@ public class Recognizer {
     static void assignment() throws IOException {
         match(Common.Token.IDENTIFIER, "assignment");
         match(Common.Token.EQUAL, "assignment");
+        if (peek() == null || (peek().token != Common.Token.IDENTIFIER && peek().token != Common.Token.NUMBER)) {
+            error("assignment", "expression");
+        }
         expression("assignment");
         match(Common.Token.EOL, "assignment");
     }
@@ -150,21 +155,19 @@ public class Recognizer {
             expression(ruleName);
             match(Common.Token.RIGHT_PARENTHESIS, ruleName);
         } else {
-            term();
+            term(ruleName);
             while (peek() != null && peek().token == Common.Token.BINOP) {
                 match(Common.Token.BINOP, ruleName);
-                term();
+                term(ruleName);
             }
         }
     }
 
-    static void term() throws IOException {
+    static void term(String ruleName) throws IOException {
         if (peek().token == Common.Token.IDENTIFIER || peek().token == Common.Token.NUMBER) {
-            match(peek().token, "term");
+            match(peek().token, ruleName);
         } else {
-            error("Error: In grammar rule term, expected IDENTIFIER or NUMBER");
+            error("term", "IDENTIFIER or NUMBER");
         }
     }
 }
-
-
